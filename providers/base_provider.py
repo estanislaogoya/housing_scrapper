@@ -3,6 +3,7 @@ import cloudscraper
 from abc import ABC, abstractmethod
 from lib.hostname_ignoring_adapter import HostNameIgnoringAdapter
 import yaml
+import certifi
 
 # configuration    
 with open("configuration.yml", 'r') as ymlfile:
@@ -26,7 +27,7 @@ class BaseProvider(ABC):
         pass
 
     def request(self, url):
-        return self.__scraper.get(url, verify=not disable_ssl)
+        return self.__scraper.get(url, verify=certifi.where())
 
     def next_prop(self):
         for source in self.provider_data['sources']:

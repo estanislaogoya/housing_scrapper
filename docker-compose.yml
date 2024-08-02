@@ -1,0 +1,16 @@
+services:
+  housing-scrapper:
+    build:
+      context: .  # Change this to the actual directory containing your Python script
+      dockerfile: Dockerfile  # Change this to the actual Dockerfile for your Python script
+    container_name: housing_scrapper
+    #depends_on:
+    #  - postgres  # This makes sure the Python service starts after the PostgreSQL service
+    # Add environment variables and other configurations for your Python service here
+    env_file:
+      - .env 
+    # Add any required volumes or ports for your Python service
+    restart: on-failure
+volumes:
+    rest-tasks:
+      external: true

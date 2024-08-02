@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import asyncio
 import logging
 import yaml
 import sys
@@ -28,4 +28,4 @@ for provider_name, provider_data in cfg['providers'].items():
         logging.error(f"Error processing provider {provider_name}.\n{str(e)}")
 
 if len(new_properties) > 0:
-    notifier.notify(new_properties)
+    asyncio.run(notifier.notify(new_properties))
