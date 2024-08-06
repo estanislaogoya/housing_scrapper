@@ -1,16 +1,20 @@
 from bs4 import BeautifulSoup
 import logging
-import re
 from providers.base_provider import BaseProvider
 
 class Argenprop(BaseProvider):
+
+    def __init__(self, provider_data, provider_name):
+        super().__init__(provider_data, provider_name)
+        self.logger = logging.getLogger(__name__)
+
     def props_in_source(self, source):
         page_link = self.provider_data['base_url'] + source
         page = 1
         processed_ids = []
 
         while(True):
-            logging.info(f"Requesting {page_link}")
+            #self.logger.info(f"Requesting {page_link}")
             page_response = self.request(page_link)
 
             if page_response.status_code != 200:
@@ -47,3 +51,5 @@ class Argenprop(BaseProvider):
 
             page += 1
             page_link = self.provider_data['base_url'] + source + f"-pagina-{page}"
+        
+        self.driver.quit()

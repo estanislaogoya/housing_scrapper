@@ -25,3 +25,4 @@ soupsieve
 typed-ast
 urllib3
 wrapt
+selenium

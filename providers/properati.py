@@ -3,6 +3,11 @@ import logging
 from providers.base_provider import BaseProvider
 
 class Properati(BaseProvider):
+
+    def __init__(self, provider_data, provider_name):
+        super().__init__(provider_data, provider_name)
+        self.logger = logging.getLogger(__name__)
+        
     def props_in_source(self, source):
         page_link = self.provider_data['base_url'] + source
         page = 1

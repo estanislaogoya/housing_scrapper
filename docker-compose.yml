@@ -8,7 +8,7 @@ services:
     #  - postgres  # This makes sure the Python service starts after the PostgreSQL service
     # Add environment variables and other configurations for your Python service here
     env_file:
-      - .env 
+      - .env
     # Add any required volumes or ports for your Python service
     restart: on-failure
 volumes:

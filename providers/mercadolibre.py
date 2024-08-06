@@ -1,32 +1,17 @@
 from bs4 import BeautifulSoup
-import logging
 import re
-from selenium import webdriver
+import logging
+from providers.base_provider import BaseProvider
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.service import Service as ChromeService
-from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import TimeoutException
-from webdriver_manager.chrome import ChromeDriverManager
-from providers.base_provider import BaseProvider
 
 class Mercadolibre(BaseProvider):
 
     def __init__(self, provider_data, provider_name):
         super().__init__(provider_data, provider_name)
-
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")  # Run Chrome in headless mode
-        chrome_options.add_argument("--disable-gpu")  # Disable GPU acceleration
-        chrome_options.add_argument("--no-sandbox")  # Bypass OS security model
-        chrome_options.add_argument("--disable-dev-shm-usage")  # Overcome limited resource problems
-        
-        # Initialize Selenium WebDriver with the options
-        self.driver = webdriver.Chrome(
-            service=ChromeService(ChromeDriverManager().install()), 
-            options=chrome_options
-        )
+        self.logger = logging.getLogger(__name__)
 
     def extract_total_pages(self, page_content):
         pages = 1
@@ -44,13 +29,12 @@ class Mercadolibre(BaseProvider):
                 if match:
                     number_of_properties = int(match.group())
                     pages = -(-number_of_properties // 50)  # Ceiling division
-                    logging.info(f"Number of pages: {pages}")
                 else:
-                    logging.info("No match found for the pattern.")
+                    self.logger.info("No match found for the pattern.")
             else:
-                logging.error("No span with class 'ui-search-search-result__quantity-results' found.")
+                self.logger.error("No span with class 'ui-search-search-result__quantity-results' found.")
         else:
-            logging.error("No div with class 'ui-search-search-result' found.")
+            self.logger.error("No div with class 'ui-search-search-result' found.")
         return pages
 
     def props_in_source(self, source):
@@ -60,7 +44,7 @@ class Mercadolibre(BaseProvider):
         page = 1
 
         while True:
-            logging.info(f"Requesting {page_link}")
+            #self.logger.info(f"Requesting {page_link}")
             self.driver.get(page_link)
 
             try:
@@ -69,7 +53,7 @@ class Mercadolibre(BaseProvider):
                     EC.presence_of_element_located((By.CLASS_NAME, 'ui-search-search-result'))
                 )
             except TimeoutException:
-                logging.error("Timeout waiting for the results section to load.")
+                self.logger.error("Timeout waiting for the results section to load.")
                 break
 
             page_content = BeautifulSoup(self.driver.page_source, 'lxml')
@@ -86,7 +70,7 @@ class Mercadolibre(BaseProvider):
                 section = prop
 
                 if section is None:
-                    logging.warning("Section not found in property.")
+                    self.logger.warning("Section not found in property.")
                     continue
 
                 title_content1 = section.find('a', class_='poly-component__title')
@@ -97,7 +81,7 @@ class Mercadolibre(BaseProvider):
                 elif title_content2 and 'href' in title_content2.attrs:
                     link = title_content2['href']
                 else:
-                    logging.warning("No Link Found")
+                    self.logger.warning("No Link Found")
 
                 matches = re.search(regex, link)
                 internal_id = matches.group(1).replace('-', '')
@@ -118,7 +102,7 @@ class Mercadolibre(BaseProvider):
                 elif title2 is not None:
                     title = title2.get_text().strip() + ' ' + price
                 else:
-                    logging.warning("Title not found.")
+                    self.logger.warning("Title not found.")
                     title = 'No title'
 
                 yield {

@@ -29,7 +29,7 @@ db.sqlite3-journal
 # Exclude all .db files
 *.db
 
-# Exclude configuration.yml files
-configuration.yml
+# # Exclude configuration.yml files
+# configuration.yml
 
 .html
