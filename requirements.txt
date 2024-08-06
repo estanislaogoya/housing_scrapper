@@ -26,3 +26,8 @@ typed-ast
 urllib3
 wrapt
 selenium
+sqlalchemy==2.0.21
+python-dotenv==1.0.0
+psycopg2-binary==2.9.7
+webdriver_manager
+termcolor

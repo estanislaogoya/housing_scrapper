@@ -125,7 +125,7 @@ class Dixon(BaseProvider):
         # print(soup.prettify())  # Example print, replace with actual scraping code
     
     def props_in_source(self, source):
-        page_link = self.provider_data['base_url'] + source
+        page_link = source['base_url'] + source['url']
         self.current_page = 1
         self.total_pages = 1
         page = 1

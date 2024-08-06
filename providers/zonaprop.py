@@ -10,7 +10,7 @@ class Zonaprop(BaseProvider):
         self.logger = logging.getLogger(__name__)
 
     def props_in_source(self, source):
-        page_link = self.provider_data['base_url'] + source
+        page_link = source['base_url'] + source['url']
         page = 1
         processed_ids = []
 
@@ -46,8 +46,8 @@ class Zonaprop(BaseProvider):
                     title = title + ' ' + price_section.text.strip()
                     
                 yield {
-                    'title': self.provider_data['base_url'] + prop['data-to-posting'], #title, 
-                    'url': self.provider_data['base_url'] + prop['data-to-posting'],
+                    'title': source['base_url'] + prop['data-to-posting'], #title, 
+                    'url': source['base_url'] + prop['data-to-posting'],
                     'internal_id': prop['data-id'],
                     'provider': self.provider_name
                     }
@@ -62,7 +62,7 @@ class Zonaprop(BaseProvider):
             if page > 3:
                 break
             page += 1
-            page_link = self.provider_data['base_url'] + source.replace(".html", f"-pagina-{page}.html")
+            page_link = source['base_url'] + source['url'].replace(".html", f"-pagina-{page}.html")
         
         self.driver.quit()
     

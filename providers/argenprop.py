@@ -4,12 +4,12 @@ from providers.base_provider import BaseProvider
 
 class Argenprop(BaseProvider):
 
-    def __init__(self, provider_data, provider_name):
-        super().__init__(provider_data, provider_name)
+    def __init__(self, provider_name, provider_data):
+        super().__init__(provider_name, provider_data)
         self.logger = logging.getLogger(__name__)
 
     def props_in_source(self, source):
-        page_link = self.provider_data['base_url'] + source
+        page_link = source['base_url'] + source['url']
         page = 1
         processed_ids = []
 
@@ -44,12 +44,12 @@ class Argenprop(BaseProvider):
                     
                 yield {
                     'title': title, 
-                    'url': self.provider_data['base_url'] + href,
+                    'url': source['base_url'] + href,
                     'internal_id': internal_id,
                     'provider': self.provider_name
                     }
 
             page += 1
-            page_link = self.provider_data['base_url'] + source + f"-pagina-{page}"
+            page_link = source['base_url'] + source['url'] + f"?pagina-{page}"
         
         self.driver.quit()

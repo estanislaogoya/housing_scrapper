@@ -17,25 +17,23 @@ import os
 
 load_dotenv()
 
-def register_property(ses, prop):
-    stmt = 'INSERT INTO properties (internal_id, provider, url) VALUES (:internal_id, :provider, :url)'
+def register_property(ses, prop, notifier_params):
     
-
     try:
         new_prop = Property(
                 internal_id = prop['internal_id'],
                 provider = prop['provider'],
                 url = prop['url'],
                 captured_date = datetime.datetime.now(),
-                client_id = os.environ['TELEGRAM_CHAT_ID'],
+                client_id = notifier_params.client_id,
                 )
         
         ses.add(new_prop)
 
         ses.commit()
-        logging.info(
-                    f"Successfully inserted query"
-                )
+        # logging.info(
+        #             f"Successfully inserted query"
+        #         )
     except Exception as e:
         ses.rollback()
         logging.error(
@@ -44,52 +42,30 @@ def register_property(ses, prop):
     
 
 
-def process_properties(provider_name, provider_data):
+def process_properties(provider_name, provider_data, ses, db, notifier_params):
     provider = get_instance(provider_name, provider_data)
 
     new_properties = []
     properties = {}
 
-    try:
-        db = PostgresDbClient()
-        ses = db.Session()
-        logging.info("DB Client instanced Successfully")
-
-        
-    except Exception as e:
-        logging.exception(e)
-        logging.error(str(e))
-        logging.error("Error. Could not instance DB Client Session")
-
     with ses:
         for prop in provider.next_prop():
+
             provider_key = prop['provider']
-            
+
             if provider_key not in properties:
                 properties[provider_key] = {'processed': [], 'new': []}
 
             properties[provider_key]['processed'].append(prop['internal_id'])
 
                 # Check to see if we know it
-            stmt = f"SELECT * FROM properties WHERE internal_id='{prop['internal_id']}' AND provider='{provider_key}'"
+            stmt = f"SELECT * FROM properties WHERE internal_id='{prop['internal_id']}' AND provider='{provider_key}' AND client_id = {notifier_params.client_id}"
 
-            try:
-                logging.info(
-                    f"Checking existing properties"
-                )
-                results = ses.execute(text(stmt))
-                ses.commit()
-            except Exception as e:
-                ses.rollback()
-                logging.error(
-                    f"Failed query execution..{e}"
-                )
-
-            logging.info(f"{results.rowcount=}")
+            results = db.execute(stmt)
 
             if results.rowcount == 0 or results.rowcount is None:
                 properties[provider_key]['new'].append(prop['internal_id'])
-                register_property(ses, prop)
+                register_property(ses, prop, notifier_params)
                 new_properties.append(prop)
             
     logging.info(f"{provider_name} | New: {colored(len(properties[provider_key]['new']), 'green')} | Processed: {len(properties[provider_key]['processed'])}")

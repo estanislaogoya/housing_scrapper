@@ -38,7 +38,7 @@ class Mercadolibre(BaseProvider):
         return pages
 
     def props_in_source(self, source):
-        page_link = self.provider_data['base_url'] + source + '_NoIndex_True'
+        page_link = source['base_url'] + source['url'] + '_NoIndex_True'
         from_ = 1
         regex = r"(MLA-\d*)"
         page = 1
@@ -115,7 +115,7 @@ class Mercadolibre(BaseProvider):
             if page < total_pages:
                 page += 1
                 from_ += len(properties)
-                page_link = self.provider_data['base_url'] + source + f"_Desde_{from_}_NoIndex_True"
+                page_link = source['base_url'] + source['url'] + f"_Desde_{from_}_NoIndex_True"
             else:
                 break
 

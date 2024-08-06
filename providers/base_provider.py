@@ -39,19 +39,22 @@ class BaseProvider(ABC):
         if disable_ssl:
             self.__scraper.mount('https://', self.get_adapter_from_strategy())
         
-        chromedriver_path = os.environ['CHROMEDRIVER']
-        
+        self.driver = webdriver.Chrome(options=self.set_chrome_options())
+    
+    def set_chrome_options(self) -> Options:
+        """Sets chrome options for Selenium.
+        Chrome options for headless browser is enabled.
+        """
         chrome_options = Options()
         chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
-        
-        self.driver = webdriver.Chrome(
-            service=ChromeService(ChromeDriverManager().install()), 
-            options=chrome_options
-        )
-    
+        chrome_prefs = {}
+        chrome_options.experimental_options["prefs"] = chrome_prefs
+        chrome_prefs["profile.default_content_settings"] = {"images": 2}
+        return chrome_options
+
+
     @abstractmethod
     def props_in_source(self, source):
         pass
@@ -60,8 +63,7 @@ class BaseProvider(ABC):
         return self.__scraper.get(url, verify=certifi.where())
 
     def next_prop(self):
-        for source in self.provider_data['sources']:
-        
+        for source in self.provider_data:
             yield from self.props_in_source(source)
     
     def get_adapter_from_strategy():
