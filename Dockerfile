@@ -1,54 +1,47 @@
-# syntax=docker/dockerfile:1
+# pull official base image
+FROM --platform=linux/amd64 python:3.11.5 as build-stage
 
-FROM python:3.8
+# Install dependencies
+RUN apt-get update -y && apt-get install -y wget xvfb unzip jq
 
-RUN apt-get update && \
-    apt-get install -y \
-    wget \
-    unzip \
-    libnss3 \
-    libgconf-2-4 \
-    libxi6 \
-    libgdk-pixbuf2.0-0 \
-    libgtk-3-0 \
-    libx11-xcb1 \
-    && rm -rf /var/lib/apt/lists/*
+# Install Google Chrome dependencies
+RUN apt-get install -y libxss1 libappindicator1 libgconf-2-4 \
+    fonts-liberation libasound2 libnspr4 libnss3 libx11-xcb1 libxtst6 lsb-release xdg-utils \
+    libgbm1 libnss3 libatk-bridge2.0-0 libgtk-3-0 libx11-xcb1 libxcb-dri3-0
 
-# Adding trusting keys to apt for repositories
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
 
-# Adding Google Chrome to the repositories
-RUN sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
+# Fetch the latest version numbers and URLs for Chrome and ChromeDriver
+RUN curl -s https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json > /tmp/versions.json
 
-# Updating apt to see and install Google Chrome
-RUN apt-get -y update
+RUN CHROME_URL=$(jq -r '.channels.Stable.downloads.chrome[] | select(.platform=="linux64") | .url' /tmp/versions.json) && \
+    wget -q --continue -O /tmp/chrome-linux64.zip $CHROME_URL && \
+    unzip /tmp/chrome-linux64.zip -d /opt/chrome
 
-# Magic happens
-RUN apt-get install -y google-chrome-stable
+RUN chmod +x /opt/chrome/chrome-linux64/chrome
 
-# Installing Unzip
-RUN apt-get install -yqq unzip
 
-# Download the Chrome Driver
-RUN wget -O /tmp/chromedriver.zip "https://storage.googleapis.com/chrome-for-testing-public/127.0.6533.88/linux64/chromedriver-linux64.zip" && \
-    unzip /tmp/chromedriver.zip chromedriver-linux64/chromedriver -d /usr/local/bin/ && \
-    rm /tmp/chromedriver.zip
+RUN CHROMEDRIVER_URL=$(jq -r '.channels.Stable.downloads.chromedriver[] | select(.platform=="linux64") | .url' /tmp/versions.json) && \
+    wget -q --continue -O /tmp/chromedriver-linux64.zip $CHROMEDRIVER_URL && \
+    unzip /tmp/chromedriver-linux64.zip -d /opt/chromedriver && \
+    chmod +x /opt/chromedriver/chromedriver-linux64/chromedriver
 
-# Set display port as an environment variable
-ENV DISPLAY=:99
+# Set up Chromedriver Environment variables
+ENV CHROMEDRIVER_DIR /opt/chromedriver
+ENV PATH $CHROMEDRIVER_DIR:$PATH
+
+# Clean upa
+RUN rm /tmp/chrome-linux64.zip /tmp/chromedriver-linux64.zip /tmp/versions.json
 
 WORKDIR /app
 
+# Copy and install Python requirements
 COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 
+ENV DISPLAY=:1
+
+# Copy application code
 COPY . .
-
-# Set the path to Chromium binary
-ENV CHROME_BIN=/usr/bin/google-chrome
-ENV PATH=$PATH:/usr/local/bin
-
-WORKDIR /app
 
 # Create a wrapper script
 RUN echo "python -u main.py" > wrapper.sh

@@ -38,8 +38,13 @@ class BaseProvider(ABC):
         self.__scraper = cloudscraper.create_scraper()
         if disable_ssl:
             self.__scraper.mount('https://', self.get_adapter_from_strategy())
+
+        # Set path to ChromeDriver
+        chrome_service = ChromeService(executable_path="/opt/chromedriver/chromedriver-linux64/chromedriver")
+
+        # Set up driver
+        self.driver = webdriver.Chrome(service=chrome_service, options=self.set_chrome_options())
         
-        self.driver = webdriver.Chrome(options=self.set_chrome_options())
     
     def set_chrome_options(self) -> Options:
         """Sets chrome options for Selenium.
@@ -49,9 +54,11 @@ class BaseProvider(ABC):
         chrome_options.add_argument("--headless")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_prefs = {}
-        chrome_options.experimental_options["prefs"] = chrome_prefs
-        chrome_prefs["profile.default_content_settings"] = {"images": 2}
+        chrome_options.add_argument("--disable-gpu")  # This is important for some versions of Chrome
+        chrome_options.add_argument("--remote-debugging-port=9222")  # This is recommended
+
+        # Set path to Chrome binary
+        chrome_options.binary_location = "/opt/chrome/chrome-linux64/chrome"
         return chrome_options
 
 
